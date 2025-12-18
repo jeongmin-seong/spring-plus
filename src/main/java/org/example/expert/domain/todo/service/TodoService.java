@@ -1,6 +1,7 @@
 package org.example.expert.domain.todo.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.expert.client.WeatherClient;
 import org.example.expert.domain.common.dto.AuthUser;
 import org.example.expert.domain.common.exception.InvalidRequestException;
@@ -17,6 +18,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -48,10 +52,31 @@ public class TodoService {
         );
     }
 
-    public Page<TodoResponse> getTodos(int page, int size) {
+    public Page<TodoResponse> getTodos(int page, int size, String weather, String startDate, String endDate) {
         Pageable pageable = PageRequest.of(page - 1, size);
 
-        Page<Todo> todos = todoRepository.findAllByOrderByModifiedAtDesc(pageable);
+        LocalDateTime startDateTime = startDate != null ? LocalDateTime.parse(startDate) : null;
+        LocalDateTime endDateTime = endDate != null ? LocalDateTime.parse(endDate) : null;
+
+        Page<Todo> todos;
+
+        if (weather != null && startDateTime != null && endDateTime != null) {
+            todos = todoRepository.findByWeatherAndModifiedAtBetween(weather, startDateTime, endDateTime, pageable);
+        } else if (weather != null && startDateTime != null) {
+            todos = todoRepository.findByWeatherAndModifiedAtAfter(weather, startDateTime, pageable);
+        } else if (weather != null && endDateTime != null) {
+            todos = todoRepository.findByWeatherAndModifiedAtBefore(weather, endDateTime, pageable);
+        } else if (weather != null) {
+            todos = todoRepository.findByWeather(weather, pageable);
+        } else if (startDateTime != null && endDateTime != null) {
+            todos = todoRepository.findByModifiedAtBetween(startDateTime, endDateTime, pageable);
+        } else if (startDateTime != null) {
+            todos = todoRepository.findByModifiedAtAfter(startDateTime, pageable);
+        } else if (endDateTime != null) {
+            todos = todoRepository.findByModifiedAtBefore(endDateTime, pageable);
+        } else {
+            todos = todoRepository.findAllByOrderByModifiedAtDesc(pageable);
+        }
 
         return todos.map(todo -> new TodoResponse(
                 todo.getId(),
