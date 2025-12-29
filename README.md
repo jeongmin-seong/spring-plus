@@ -1,7 +1,7 @@
 # Spring Plus 프로젝트
 
 > Spring Boot 기반 TODO 관리 애플리케이션
-> 
+>
 > JPA 심화, QueryDSL, Spring Security를 활용한 실무 중심 프로젝트
 
 ## 📋 목차
